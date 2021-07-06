@@ -9,9 +9,6 @@ import config as c
 from freia_funcs import permute_layer, glow_coupling_layer, F_fully_connected, ReversibleGraphNet, OutputNode, \
     InputNode, Node
 
-WEIGHT_DIR = './weights'
-MODEL_DIR = './models'
-
 
 def nf_head(input_dim=c.n_feat):
     nodes = list()
@@ -47,24 +44,24 @@ class DifferNet(nn.Module):
 
 
 def save_model(model, filename):
-    if not os.path.exists(MODEL_DIR):
-        os.makedirs(MODEL_DIR)
-    torch.save(model, os.path.join(MODEL_DIR, filename))
+    if not os.path.exists(c.MODEL_DIR):
+        os.makedirs(c.MODEL_DIR)
+    torch.save(model, c.MODEL_DIR+filename)
 
 
 def load_model(filename):
-    path = os.path.join(MODEL_DIR, filename)
+    path = c.MODEL_DIR+filename
     model = torch.load(path)
     return model
 
 
 def save_weights(model, filename):
-    if not os.path.exists(WEIGHT_DIR):
-        os.makedirs(WEIGHT_DIR)
-    torch.save(model.state_dict(), os.path.join(WEIGHT_DIR, filename))
+    if not os.path.exists(c.WEIGHT_DIR):
+        os.makedirs(c.WEIGHT_DIR)
+    torch.save(model.state_dict(), c.WEIGHT_DIR+filename)
 
 
 def load_weights(model, filename):
-    path = os.path.join(WEIGHT_DIR, filename)
+    path = c.WEIGHT_DIR+filename
     model.load_state_dict(torch.load(path))
     return model

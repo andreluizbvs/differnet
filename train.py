@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-from sklearn.metrics import roc_auc_score
+from sklearn.metrics import roc_auc_score,f1_score
 from tqdm import tqdm
 
 import config as c
@@ -12,17 +12,22 @@ from utils import *
 class Score_Observer:
     '''Keeps an eye on the current and highest score so far'''
 
-    def __init__(self, name):
+    def __init__(self, name, model):
         self.name = name
         self.max_epoch = 0
         self.max_score = None
         self.last = None
+        self.model = model
 
     def update(self, score, epoch, print_score=False):
         self.last = score
+        save_model(self.model,"/last.model")
+        save_weights(self.model,"/last.weights")
         if epoch == 0 or score > self.max_score:
             self.max_score = score
             self.max_epoch = epoch
+            save_model(self.model,"/best.model")
+            save_weights(self.model,"/best.weights")
         if print_score:
             self.print_score()
 
@@ -36,7 +41,7 @@ def train(train_loader, test_loader):
     optimizer = torch.optim.Adam(model.nf.parameters(), lr=c.lr_init, betas=(0.8, 0.8), eps=1e-04, weight_decay=1e-5)
     model.to(c.device)
 
-    score_obs = Score_Observer('AUROC')
+    score_obs = Score_Observer(c.metric, model)
 
     for epoch in range(c.meta_epochs):
 
@@ -87,14 +92,20 @@ def train(train_loader, test_loader):
 
         z_grouped = torch.cat(test_z, dim=0).view(-1, c.n_transforms_test, c.n_feat)
         anomaly_score = t2np(torch.mean(z_grouped ** 2, dim=(-2, -1)))
-        score_obs.update(roc_auc_score(is_anomaly, anomaly_score), epoch,
-                         print_score=c.verbose or epoch == c.meta_epochs - 1)
+        if(c.metric == 'AUROC'):
+            score_obs.update(roc_auc_score(is_anomaly, anomaly_score), epoch,
+                            print_score=c.verbose or epoch == c.meta_epochs - 1)
+        elif(c.metric == 'F1-Score'):
+            median = np.median(anomaly_score)
+            anomaly_score_binarized = [1 if x >= median else 0 for x in anomaly_score]
+            score_obs.update(f1_score(is_anomaly, anomaly_score_binarized), epoch,
+                            print_score=c.verbose or epoch == c.meta_epochs - 1)
 
     if c.grad_map_viz:
         export_gradient_maps(model, test_loader, optimizer, -1)
 
     if c.save_model:
         model.to('cpu')
-        save_model(model, c.modelname)
-        save_weights(model, c.modelname)
+        save_model(model, "/final.model")
+        save_weights(model, "/final.weights")
     return model

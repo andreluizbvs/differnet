@@ -7,12 +7,23 @@ import torch
 torch.cuda.set_device(0)
 
 # data settings
-dataset_path = "dummy_dataset"
-class_name = "dummy_class"
-modelname = "dummy_test"
+# dataset_path = "vari-grip"
+dataset_path = "isolador_vidro"
+# class_name = "corrosion"
+class_name = "missing_cap"
+modelname = dataset_path
+image_folder = dataset_path+'/'+class_name+'/test/good'
 
-img_size = (448, 448)
+# model setting
+MODEL_DIR = './models'+'/'+modelname
+WEIGHT_DIR = './weights'+'/'+modelname
+
+img_size = (512, 512)
 img_dims = [3] + list(img_size)
+
+# metric
+
+metric = 'F1-Score'
 
 # transformation settings
 transf_rotations = True
@@ -45,4 +56,8 @@ sub_epochs = 8
 verbose = True
 grad_map_viz = False
 hide_tqdm_bar = True
+hide_tqdm_bar_test = False
 save_model = True
+save_roc = True
+save_prc = True
+save_hist = True
